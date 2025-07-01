@@ -81,19 +81,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Buscar usuário local
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!user) {
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+    }
+
     // Calcular valor total com juros
     const valorTotal = valor * Math.pow(1 + taxaJuros / 100, prazoMeses);
     const valorParcela = valorTotal / prazoMeses;
+    
+    // Calcular data de vencimento (prazoMeses meses após a data do empréstimo)
+    const dataVencimento = new Date(dataEmprestimo ? new Date(dataEmprestimo) : new Date());
+    dataVencimento.setMonth(dataVencimento.getMonth() + prazoMeses);
 
     const emprestimo = await prisma.emprestimo.create({
       data: {
         clienteId,
+        userId: user.id,
         valor,
         valorTotal,
         valorParcela,
         taxaJuros,
-        prazoMeses,
+        numeroParcelas: prazoMeses,
         dataEmprestimo: dataEmprestimo ? new Date(dataEmprestimo) : new Date(),
+        dataVencimento,
         observacoes,
         status: 'ATIVO'
       },

@@ -49,6 +49,7 @@ export default function NovoPagamentoModal({
           ...formData,
           emprestimoId,
           valor: parseFloat(formData.valor),
+          metodoPagamento: formData.metodoPagamento,
         }),
       });
 

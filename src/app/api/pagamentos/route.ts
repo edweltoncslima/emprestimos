@@ -90,26 +90,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Buscar usuário local
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!user) {
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+    }
+
     // Calcular valor total já pago
     const valorTotalPago = emprestimo.pagamentos.reduce(
-      (total, pagamento) => total + pagamento.valor,
+      (total, pagamento) => total + Number(pagamento.valorPago),
       0
     );
 
     // Verificar se o pagamento não excede o valor total do empréstimo
-    if (valorTotalPago + valor > emprestimo.valorTotal) {
+    if (valorTotalPago + valor > Number(emprestimo.valorTotal)) {
       return NextResponse.json(
         { error: 'Valor do pagamento excede o valor total do empréstimo' },
         { status: 400 }
       );
     }
 
+    // Calcular número da parcela
+    const numeroParcela = emprestimo.pagamentos.length + 1;
+    
+    // Calcular data de vencimento da parcela
+    const dataVencimento = new Date(emprestimo.dataEmprestimo);
+    dataVencimento.setMonth(dataVencimento.getMonth() + numeroParcela);
+
     const pagamento = await prisma.pagamento.create({
       data: {
         emprestimoId,
-        valor,
+        userId: user.id,
+        numeroParcela,
+        valorParcela: emprestimo.valorParcela,
+        valorPago: valor,
+        dataVencimento,
         dataPagamento: dataPagamento ? new Date(dataPagamento) : new Date(),
-        metodoPagamento,
+        status: 'PAGO',
+        formaPagamento: metodoPagamento,
         observacoes
       },
       include: {
@@ -130,7 +148,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar se o empréstimo foi quitado
     const novoValorTotalPago = valorTotalPago + valor;
-    if (novoValorTotalPago >= emprestimo.valorTotal) {
+    if (novoValorTotalPago >= Number(emprestimo.valorTotal)) {
       await prisma.emprestimo.update({
         where: { id: emprestimoId },
         data: { status: 'QUITADO' }

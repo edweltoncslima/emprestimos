@@ -3,6 +3,7 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useUser } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface Cliente {
   id: string;
@@ -26,6 +27,7 @@ export default function ClientesPage() {
 
 function ClientesContent() {
   const { user } = useUser();
+  const router = useRouter();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +51,27 @@ function ClientesContent() {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja deletar este cliente?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/clientes/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao deletar cliente');
+      }
+
+      setClientes(clientes.filter(cliente => cliente.id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao deletar cliente');
     }
   };
 
@@ -105,7 +128,10 @@ function ClientesContent() {
 
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Lista de Clientes</h2>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+              <button 
+                onClick={() => router.push('/clientes/novo')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
                 + Adicionar Novo Cliente
               </button>
             </div>
@@ -121,7 +147,10 @@ function ClientesContent() {
                 <p className="text-gray-500 mb-4">
                   Nenhum cliente encontrado. Adicione seu primeiro cliente para começar.
                 </p>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-medium">
+                <button 
+                  onClick={() => router.push('/clientes/novo')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors"
+                >
                   Adicionar Primeiro Cliente
                 </button>
               </div>
@@ -175,10 +204,16 @@ function ClientesContent() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-blue-600 hover:text-blue-900 mr-3">
+                          <button 
+                            onClick={() => router.push(`/clientes/${cliente.id}/editar`)}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                          >
                             Editar
                           </button>
-                          <button className="text-red-600 hover:text-red-900">
+                          <button 
+                            onClick={() => handleDelete(cliente.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
                             Excluir
                           </button>
                         </td>

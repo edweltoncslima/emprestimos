@@ -22,9 +22,13 @@ interface Emprestimo {
 
 interface Pagamento {
   id: string;
-  valor: number;
+  numeroParcela: number;
+  valorParcela: number;
+  valorPago: number;
+  dataVencimento: string;
   dataPagamento: string;
-  metodoPagamento: string;
+  status: string;
+  formaPagamento: string;
   observacoes?: string;
   emprestimo: Emprestimo;
 }
@@ -148,14 +152,14 @@ export default function PagamentosPage() {
             <div className="bg-white p-6 rounded-lg shadow">
               <h3 className="text-sm font-medium text-gray-500">Valor Total Pago</h3>
               <p className="text-2xl font-bold text-green-600">
-                {formatCurrency(pagamentos.reduce((total, pag) => total + pag.valor, 0))}
+                {formatCurrency(pagamentos.reduce((total, pag) => total + Number(pag.valorPago), 0))}
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow">
               <h3 className="text-sm font-medium text-gray-500">Média por Pagamento</h3>
               <p className="text-2xl font-bold text-blue-600">
                 {pagamentos.length > 0 
-                  ? formatCurrency(pagamentos.reduce((total, pag) => total + pag.valor, 0) / pagamentos.length)
+                  ? formatCurrency(pagamentos.reduce((total, pag) => total + Number(pag.valorPago), 0) / pagamentos.length)
                   : formatCurrency(0)
                 }
               </p>
@@ -171,7 +175,7 @@ export default function PagamentosPage() {
                       return pagDate.getMonth() === now.getMonth() && 
                              pagDate.getFullYear() === now.getFullYear();
                     })
-                    .reduce((total, pag) => total + pag.valor, 0)
+                    .reduce((total, pag) => total + Number(pag.valorPago), 0)
                 )}
               </p>
             </div>

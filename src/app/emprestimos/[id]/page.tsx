@@ -17,9 +17,13 @@ interface Cliente {
 
 interface Pagamento {
   id: string;
-  valor: number;
+  numeroParcela: number;
+  valorParcela: number;
+  valorPago: number;
+  dataVencimento: string;
   dataPagamento: string;
-  metodoPagamento: string;
+  status: string;
+  formaPagamento: string;
   observacoes?: string;
 }
 
@@ -29,9 +33,10 @@ interface Emprestimo {
   valorTotal: number;
   valorParcela: number;
   taxaJuros: number;
-  prazoMeses: number;
+  numeroParcelas: number;
   dataEmprestimo: string;
-  status: 'ATIVO' | 'QUITADO' | 'INADIMPLENTE';
+  dataVencimento: string;
+  status: 'ATIVO' | 'QUITADO' | 'EM_ATRASO' | 'CANCELADO';
   observacoes?: string;
   cliente: Cliente;
   pagamentos: Pagamento[];
@@ -100,7 +105,7 @@ export default function DetalhesEmprestimoPage() {
 
   const calcularValorPago = () => {
     if (!emprestimo) return 0;
-    return emprestimo.pagamentos.reduce((total, pagamento) => total + pagamento.valor, 0);
+    return emprestimo.pagamentos.reduce((total, pagamento) => total + Number(pagamento.valorPago), 0);
   };
 
   const calcularValorRestante = () => {
@@ -255,10 +260,10 @@ export default function DetalhesEmprestimoPage() {
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Taxa de Juros</h3>
                     <p className="text-lg font-semibold text-gray-900">{emprestimo.taxaJuros}% ao mês</p>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Prazo</h3>
-                    <p className="text-lg font-semibold text-gray-900">{emprestimo.prazoMeses} meses</p>
-                  </div>
+                                     <div>
+                     <h3 className="text-sm font-medium text-gray-500 mb-2">Prazo</h3>
+                     <p className="text-lg font-semibold text-gray-900">{emprestimo.numeroParcelas} meses</p>
+                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Data do Empréstimo</h3>
                     <p className="text-lg font-semibold text-gray-900">{formatDate(emprestimo.dataEmprestimo)}</p>
@@ -329,19 +334,19 @@ export default function DetalhesEmprestimoPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {emprestimo.pagamentos.map((pagamento) => (
-                        <div key={pagamento.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                          <div>
-                            <div className="font-medium text-gray-900">{formatCurrency(pagamento.valor)}</div>
-                            <div className="text-sm text-gray-500">
-                              {formatDateTime(pagamento.dataPagamento)} • {pagamento.metodoPagamento}
-                            </div>
-                            {pagamento.observacoes && (
-                              <div className="text-sm text-gray-600 mt-1">{pagamento.observacoes}</div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                                             {emprestimo.pagamentos.map((pagamento) => (
+                         <div key={pagamento.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                           <div>
+                             <div className="font-medium text-gray-900">{formatCurrency(pagamento.valorPago)}</div>
+                             <div className="text-sm text-gray-500">
+                               {formatDateTime(pagamento.dataPagamento)} • {pagamento.formaPagamento}
+                             </div>
+                             {pagamento.observacoes && (
+                               <div className="text-sm text-gray-600 mt-1">{pagamento.observacoes}</div>
+                             )}
+                           </div>
+                         </div>
+                       ))}
                     </div>
                   )}
                 </div>

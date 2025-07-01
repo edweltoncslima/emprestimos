@@ -14,9 +14,13 @@ interface Cliente {
 
 interface Pagamento {
   id: string;
-  valor: number;
+  numeroParcela: number;
+  valorParcela: number;
+  valorPago: number;
+  dataVencimento: string;
   dataPagamento: string;
-  metodoPagamento: string;
+  status: string;
+  formaPagamento: string;
 }
 
 interface Emprestimo {
@@ -25,9 +29,10 @@ interface Emprestimo {
   valorTotal: number;
   valorParcela: number;
   taxaJuros: number;
-  prazoMeses: number;
+  numeroParcelas: number;
   dataEmprestimo: string;
-  status: 'ATIVO' | 'QUITADO' | 'INADIMPLENTE';
+  dataVencimento: string;
+  status: 'ATIVO' | 'QUITADO' | 'EM_ATRASO' | 'CANCELADO';
   observacoes?: string;
   cliente: Cliente;
   pagamentos: Pagamento[];
@@ -106,7 +111,7 @@ export default function EmprestimosPage() {
   };
 
   const calcularValorPago = (emprestimo: Emprestimo) => {
-    return emprestimo.pagamentos.reduce((total, pagamento) => total + pagamento.valor, 0);
+    return emprestimo.pagamentos.reduce((total, pagamento) => total + Number(pagamento.valorPago), 0);
   };
 
   const calcularValorRestante = (emprestimo: Emprestimo) => {
