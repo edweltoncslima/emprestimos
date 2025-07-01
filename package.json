@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "setup-db": "node scripts/setup-db.js",
+    "populate-db": "node scripts/populate-db.js",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

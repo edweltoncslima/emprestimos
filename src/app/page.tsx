@@ -50,7 +50,7 @@ export default function Home() {
                   Gerencie seus empréstimos de forma simples e eficiente.
                 </p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
                   <div className="bg-white p-6 rounded-lg shadow-md">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
                       Clientes
@@ -78,6 +78,21 @@ export default function Home() {
                       className="inline-block bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700"
                     >
                       Ver Empréstimos
+                    </Link>
+                  </div>
+                  
+                  <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Pagamentos
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Acompanhe todos os pagamentos realizados.
+                    </p>
+                    <Link 
+                      href="/pagamentos"
+                      className="inline-block bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-700"
+                    >
+                      Ver Pagamentos
                     </Link>
                   </div>
                   

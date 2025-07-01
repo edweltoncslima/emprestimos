@@ -55,6 +55,9 @@ CREATE DATABASE emprestimos_db;
 
 # Executar setup automático
 npm run setup-db
+
+# (Opcional) Popular com dados de exemplo
+npm run populate-db
 ```
 
 5. **Inicie o servidor de desenvolvimento**
@@ -107,22 +110,60 @@ O sistema usa Clerk para autenticação:
 
 ## 📊 Funcionalidades
 
+### 🎯 Como Usar o Sistema
+
+1. **Cadastro e Login**
+   - Acesse a aplicação e faça login com sua conta Clerk
+   - O sistema criará automaticamente seu perfil no banco local
+
+2. **Gerenciar Clientes**
+   - Vá para "Clientes" no menu principal
+   - Adicione novos clientes com dados completos
+   - Visualize, edite ou remova clientes existentes
+
+3. **Criar Empréstimos**
+   - Acesse "Empréstimos" no menu principal
+   - Clique em "Novo Empréstimo"
+   - Selecione o cliente, informe valor, taxa de juros e prazo
+   - O sistema calcula automaticamente o valor total e parcelas
+
+4. **Registrar Pagamentos**
+   - Na página de detalhes do empréstimo, clique em "Novo Pagamento"
+   - Informe o valor, método de pagamento e observações
+   - O sistema atualiza automaticamente o progresso
+
+5. **Acompanhar Progresso**
+   - Visualize o progresso de pagamentos em cada empréstimo
+   - Acompanhe estatísticas gerais no dashboard
+   - Veja o histórico completo em "Pagamentos"
+
+### 💡 Dicas de Uso
+- **Taxa de Juros**: Informe a taxa mensal (ex: 2% = 2.0)
+- **Prazo**: Em meses (ex: 12 meses = 12)
+- **Status**: Ativo (em andamento), Quitado (finalizado), Inadimplente (atrasado)
+- **Métodos de Pagamento**: PIX, Cartão, Boleto, Transferência, Dinheiro, Outros
+
 ### ✅ Implementadas
 - [x] Autenticação com Clerk
 - [x] Proteção de rotas
 - [x] Dashboard principal
 - [x] CRUD de clientes
+- [x] CRUD de empréstimos
+- [x] Sistema de pagamentos
 - [x] Banco de dados PostgreSQL
 - [x] API REST
 - [x] Interface responsiva
+- [x] Cálculos automáticos de juros
+- [x] Progresso de pagamentos
+- [x] Histórico de transações
 
 ### 🚧 Em Desenvolvimento
-- [ ] CRUD de empréstimos
-- [ ] Sistema de pagamentos
-- [ ] Relatórios
+- [ ] Relatórios avançados
 - [ ] Dashboard com gráficos
 - [ ] Notificações
 - [ ] Exportação de dados
+- [ ] Múltiplos usuários
+- [ ] Backup automático
 
 ## 🎨 Interface
 
@@ -139,6 +180,7 @@ npm run build        # Build de produção
 npm run start        # Servidor de produção
 npm run lint         # Verificar código
 npm run setup-db     # Configurar banco
+npm run populate-db  # Popular com dados de exemplo
 npm run db:studio    # Interface do banco
 ```
 
