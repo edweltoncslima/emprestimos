@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo para usuários do Clerk
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique // ID do usuário no Clerk
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  clientes    Cliente[]
+  emprestimos Emprestimo[]
+  pagamentos  Pagamento[]
+
+  @@map("users")
+}
+
+// Modelo para clientes
+model Cliente {
+  id          String   @id @default(cuid())
+  nome        String
+  email       String   @unique
+  telefone    String?
+  cpf         String   @unique
+  endereco    String?
+  cidade      String?
+  estado      String?
+  cep         String?
+  dataNascimento DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emprestimos Emprestimo[]
+
+  @@map("clientes")
+}
+
+// Modelo para empréstimos
+model Emprestimo {
+  id              String   @id @default(cuid())
+  valor           Decimal  @db.Decimal(10, 2)
+  valorTotal      Decimal  @db.Decimal(10, 2) // Valor com juros
+  taxaJuros       Decimal  @db.Decimal(5, 4)  // Taxa de juros mensal (ex: 0.02 = 2%)
+  numeroParcelas  Int
+  valorParcela    Decimal  @db.Decimal(10, 2)
+  dataEmprestimo  DateTime @default(now())
+  dataVencimento  DateTime
+  status          StatusEmprestimo @default(ATIVO)
+  observacoes     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relacionamentos
+  clienteId       String
+  cliente         Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pagamentos      Pagamento[]
+
+  @@map("emprestimos")
+}
+
+// Modelo para pagamentos
+model Pagamento {
+  id              String   @id @default(cuid())
+  numeroParcela   Int
+  valorParcela    Decimal  @db.Decimal(10, 2)
+  valorPago       Decimal  @db.Decimal(10, 2)
+  dataVencimento  DateTime
+  dataPagamento   DateTime?
+  status          StatusPagamento @default(PENDENTE)
+  formaPagamento  FormaPagamento?
+  observacoes     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relacionamentos
+  emprestimoId    String
+  emprestimo      Emprestimo    @relation(fields: [emprestimoId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("pagamentos")
+}
+
+// Enums
+enum StatusEmprestimo {
+  ATIVO
+  QUITADO
+  EM_ATRASO
+  CANCELADO
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  EM_ATRASO
+  PARCIAL
+}
+
+enum FormaPagamento {
+  DINHEIRO
+  PIX
+  CARTAO_CREDITO
+  CARTAO_DEBITO
+  TRANSFERENCIA
+  BOLETO
+}
