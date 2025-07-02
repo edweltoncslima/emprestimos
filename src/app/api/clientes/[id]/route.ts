@@ -5,13 +5,15 @@ import { prisma } from '@/lib/prisma';
 // GET - Buscar cliente por ID (com empréstimos)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
+
+    const { id } = await params;
 
     // Buscar usuário local
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
@@ -21,7 +23,7 @@ export async function GET(
 
     // Buscar cliente do usuário
     const cliente = await prisma.cliente.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         emprestimos: {
           orderBy: { dataEmprestimo: 'desc' }
@@ -40,5 +42,72 @@ export async function GET(
       { error: 'Erro interno do servidor' },
       { status: 500 }
     );
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+
+    const cliente = await prisma.cliente.update({
+      where: { id },
+      data: {
+        nome: body.nome,
+        email: body.email,
+        telefone: body.telefone,
+      }
+    });
+
+    return NextResponse.json(cliente);
+  } catch (error) {
+    console.error('Erro ao atualizar cliente:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    // Verificar se o cliente tem empréstimos ativos
+    const emprestimosAtivos = await prisma.emprestimo.findFirst({
+      where: {
+        clienteId: id,
+        status: 'ATIVO'
+      }
+    });
+
+    if (emprestimosAtivos) {
+      return NextResponse.json(
+        { error: 'Não é possível deletar um cliente com empréstimos ativos' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.cliente.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ message: 'Cliente deletado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao deletar cliente:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 } 

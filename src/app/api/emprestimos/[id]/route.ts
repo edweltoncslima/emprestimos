@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { Decimal } from '@prisma/client/runtime/library';
 
 // GET - Buscar empréstimo específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -14,8 +15,10 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const emprestimo = await prisma.emprestimo.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         cliente: {
           select: {
@@ -28,9 +31,7 @@ export async function GET(
           }
         },
         pagamentos: {
-          orderBy: {
-            dataPagamento: 'desc'
-          }
+          orderBy: { numeroParcela: 'asc' }
         }
       }
     });
@@ -55,7 +56,7 @@ export async function GET(
 // PUT - Atualizar empréstimo
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -64,19 +65,12 @@ export async function PUT(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
-    const {
-      valor,
-      taxaJuros,
-      prazoMeses,
-      dataEmprestimo,
-      observacoes,
-      status
-    } = body;
 
     // Verificar se o empréstimo existe
     const emprestimoExistente = await prisma.emprestimo.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!emprestimoExistente) {
@@ -86,36 +80,30 @@ export async function PUT(
       );
     }
 
-    // Calcular novos valores se necessário
     let valorTotal = emprestimoExistente.valorTotal;
     let valorParcela = emprestimoExistente.valorParcela;
 
-    if (valor && taxaJuros && prazoMeses) {
-      valorTotal = valor * Math.pow(1 + taxaJuros / 100, prazoMeses);
-      valorParcela = valorTotal / prazoMeses;
+    if (body.valor && body.taxaJuros && body.numeroParcelas) {
+      const base = new Decimal(1).add(new Decimal(body.taxaJuros).div(100));
+      valorTotal = new Decimal(body.valor).mul(base.pow(body.numeroParcelas));
+      valorParcela = valorTotal.div(body.numeroParcelas);
     }
 
     const emprestimo = await prisma.emprestimo.update({
-      where: { id: params.id },
+      where: { id },
       data: {
-        valor: valor || emprestimoExistente.valor,
-        valorTotal,
-        valorParcela,
-        taxaJuros: taxaJuros || emprestimoExistente.taxaJuros,
-        prazoMeses: prazoMeses || emprestimoExistente.prazoMeses,
-        dataEmprestimo: dataEmprestimo ? new Date(dataEmprestimo) : emprestimoExistente.dataEmprestimo,
-        observacoes: observacoes || emprestimoExistente.observacoes,
-        status: status || emprestimoExistente.status
+        valor: body.valor ? new Decimal(body.valor) : new Decimal(emprestimoExistente.valor),
+        valorTotal: new Decimal(valorTotal),
+        valorParcela: new Decimal(valorParcela),
+        taxaJuros: body.taxaJuros ? body.taxaJuros : emprestimoExistente.taxaJuros,
+        numeroParcelas: body.numeroParcelas || emprestimoExistente.numeroParcelas,
+        dataEmprestimo: body.dataEmprestimo ? new Date(body.dataEmprestimo) : emprestimoExistente.dataEmprestimo,
+        observacoes: body.observacoes || emprestimoExistente.observacoes,
+        status: body.status || emprestimoExistente.status
       },
       include: {
-        cliente: {
-          select: {
-            id: true,
-            nome: true,
-            email: true,
-            telefone: true,
-          }
-        }
+        cliente: true,
+        pagamentos: true
       }
     });
 
@@ -132,7 +120,7 @@ export async function PUT(
 // DELETE - Deletar empréstimo
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -141,31 +129,22 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    // Verificar se o empréstimo existe
-    const emprestimo = await prisma.emprestimo.findUnique({
-      where: { id: params.id },
-      include: {
-        pagamentos: true
-      }
+    const { id } = await params;
+
+    // Verificar se há pagamentos
+    const pagamentos = await prisma.pagamento.findFirst({
+      where: { emprestimoId: id }
     });
 
-    if (!emprestimo) {
+    if (pagamentos) {
       return NextResponse.json(
-        { error: 'Empréstimo não encontrado' },
-        { status: 404 }
-      );
-    }
-
-    // Verificar se há pagamentos associados
-    if (emprestimo.pagamentos.length > 0) {
-      return NextResponse.json(
-        { error: 'Não é possível deletar um empréstimo que possui pagamentos' },
+        { error: 'Não é possível deletar um empréstimo com pagamentos registrados' },
         { status: 400 }
       );
     }
 
     await prisma.emprestimo.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ message: 'Empréstimo deletado com sucesso' });

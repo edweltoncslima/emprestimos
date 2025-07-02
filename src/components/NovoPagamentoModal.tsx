@@ -1,6 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { X, DollarSign, Calendar, CreditCard } from 'lucide-react';
 
 interface NovoPagamentoModalProps {
   isOpen: boolean;
@@ -26,11 +35,18 @@ export default function NovoPagamentoModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      metodoPagamento: value
     }));
   };
 
@@ -82,133 +98,133 @@ export default function NovoPagamentoModal({
     }).format(value);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Novo Pagamento</h2>
-            <button
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <DollarSign className="h-5 w-5" />
+            <span>Novo Pagamento</span>
+          </DialogTitle>
+          <DialogDescription>
+            Registre um novo pagamento para este empréstimo
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Error Message */}
+        {error && (
+          <Card className="border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20">
+            <CardContent className="pt-4">
+              <p className="text-red-700 dark:text-red-300 text-sm">
+                {error}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Info Card */}
+        <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                Valor Restante
+              </Badge>
+              <span className="font-semibold text-blue-700 dark:text-blue-300">
+                {formatCurrency(valorRestante)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Valor */}
+          <div className="space-y-2">
+            <Label htmlFor="valor">Valor (R$)</Label>
+            <Input
+              type="number"
+              id="valor"
+              name="valor"
+              value={formData.valor}
+              onChange={handleInputChange}
+              required
+              min="0.01"
+              max={valorRestante}
+              step="0.01"
+              placeholder="0,00"
+              className="text-lg font-medium"
+            />
+          </div>
+
+          {/* Data do Pagamento */}
+          <div className="space-y-2">
+            <Label htmlFor="dataPagamento" className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4" />
+              <span>Data do Pagamento</span>
+            </Label>
+            <Input
+              type="date"
+              id="dataPagamento"
+              name="dataPagamento"
+              value={formData.dataPagamento}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          {/* Método de Pagamento */}
+          <div className="space-y-2">
+            <Label htmlFor="metodoPagamento" className="flex items-center space-x-2">
+              <CreditCard className="h-4 w-4" />
+              <span>Método de Pagamento</span>
+            </Label>
+            <Select value={formData.metodoPagamento} onValueChange={handleSelectChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o método" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PIX">PIX</SelectItem>
+                <SelectItem value="CARTAO_CREDITO">Cartão de Crédito</SelectItem>
+                <SelectItem value="CARTAO_DEBITO">Cartão de Débito</SelectItem>
+                <SelectItem value="BOLETO">Boleto</SelectItem>
+                <SelectItem value="TRANSFERENCIA">Transferência</SelectItem>
+                <SelectItem value="DINHEIRO">Dinheiro</SelectItem>
+                <SelectItem value="OUTROS">Outros</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Observações */}
+          <div className="space-y-2">
+            <Label htmlFor="observacoes">Observações</Label>
+            <Textarea
+              id="observacoes"
+              name="observacoes"
+              value={formData.observacoes}
+              onChange={handleInputChange}
+              placeholder="Observações sobre o pagamento..."
+              rows={3}
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              disabled={submitting}
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={submitting || !formData.valor}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {submitting ? 'Registrando...' : 'Registrar Pagamento'}
+            </Button>
           </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-              {error}
-            </div>
-          )}
-
-          {/* Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-blue-700">
-              <span className="font-medium">Valor restante:</span> {formatCurrency(valorRestante)}
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Valor */}
-            <div>
-              <label htmlFor="valor" className="block text-sm font-medium text-gray-700 mb-2">
-                Valor (R$) *
-              </label>
-              <input
-                type="number"
-                id="valor"
-                name="valor"
-                value={formData.valor}
-                onChange={handleInputChange}
-                required
-                min="0.01"
-                max={valorRestante}
-                step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="0,00"
-              />
-            </div>
-
-            {/* Data do Pagamento */}
-            <div>
-              <label htmlFor="dataPagamento" className="block text-sm font-medium text-gray-700 mb-2">
-                Data do Pagamento
-              </label>
-              <input
-                type="date"
-                id="dataPagamento"
-                name="dataPagamento"
-                value={formData.dataPagamento}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            {/* Método de Pagamento */}
-            <div>
-              <label htmlFor="metodoPagamento" className="block text-sm font-medium text-gray-700 mb-2">
-                Método de Pagamento *
-              </label>
-              <select
-                id="metodoPagamento"
-                name="metodoPagamento"
-                value={formData.metodoPagamento}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="PIX">PIX</option>
-                <option value="CARTAO_CREDITO">Cartão de Crédito</option>
-                <option value="CARTAO_DEBITO">Cartão de Débito</option>
-                <option value="BOLETO">Boleto</option>
-                <option value="TRANSFERENCIA">Transferência</option>
-                <option value="DINHEIRO">Dinheiro</option>
-                <option value="OUTROS">Outros</option>
-              </select>
-            </div>
-
-            {/* Observações */}
-            <div>
-              <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700 mb-2">
-                Observações
-              </label>
-              <textarea
-                id="observacoes"
-                name="observacoes"
-                value={formData.observacoes}
-                onChange={handleInputChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Observações sobre o pagamento..."
-              />
-            </div>
-
-            {/* Buttons */}
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? 'Salvando...' : 'Salvar Pagamento'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 } 

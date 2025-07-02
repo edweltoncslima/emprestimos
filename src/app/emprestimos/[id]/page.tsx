@@ -4,6 +4,26 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import BankNavigation from '@/components/BankNavigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
+import { 
+  ArrowLeft, 
+  Edit, 
+  Trash2, 
+  Plus, 
+  CreditCard, 
+  User,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  CheckCircle,
+  Clock,
+  AlertCircle
+} from 'lucide-react';
 import NovoPagamentoModal from '@/components/NovoPagamentoModal';
 
 interface Cliente {
@@ -11,8 +31,6 @@ interface Cliente {
   nome: string;
   email: string;
   telefone: string;
-  cpf: string;
-  endereco: string;
 }
 
 interface Pagamento {
@@ -86,20 +104,29 @@ export default function DetalhesEmprestimoPage() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR');
-  };
-
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ATIVO':
-        return 'bg-green-100 text-green-800';
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Ativo</Badge>;
       case 'QUITADO':
-        return 'bg-blue-100 text-blue-800';
-      case 'INADIMPLENTE':
-        return 'bg-red-100 text-red-800';
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Quitado</Badge>;
+      case 'EM_ATRASO':
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Em Atraso</Badge>;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'PAGO':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'PENDENTE':
+        return <Clock className="h-4 w-4 text-yellow-600" />;
+      case 'EM_ATRASO':
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-600" />;
     }
   };
 
@@ -146,22 +173,25 @@ export default function DetalhesEmprestimoPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gray-50 p-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-              <div className="bg-white p-6 rounded-lg shadow">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+          <BankNavigation />
+          <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="animate-pulse space-y-6">
+              <div className="h-8 bg-muted rounded w-1/4"></div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-16 bg-muted rounded"></div>
+                  ))}
+                </div>
                 <div className="space-y-4">
-                  {[...Array(8)].map((_, i) => (
-                    <div key={i}>
-                      <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                      <div className="h-6 bg-gray-200 rounded"></div>
-                    </div>
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-32 bg-muted rounded"></div>
                   ))}
                 </div>
               </div>
             </div>
-          </div>
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -170,12 +200,17 @@ export default function DetalhesEmprestimoPage() {
   if (error || !emprestimo) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gray-50 p-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error || 'Empréstimo não encontrado'}
-            </div>
-          </div>
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+          <BankNavigation />
+          <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Card className="border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20">
+              <CardContent className="pt-6">
+                <p className="text-red-700 dark:text-red-300">
+                  {error || 'Empréstimo não encontrado'}
+                </p>
+              </CardContent>
+            </Card>
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -187,9 +222,272 @@ export default function DetalhesEmprestimoPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
-          
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <BankNavigation />
+        
+        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.back()}
+                className="flex items-center space-x-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Voltar</span>
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Detalhes do Empréstimo</h1>
+                <p className="text-muted-foreground mt-2">
+                  Empréstimo de {emprestimo.cliente.nome}
+                </p>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/emprestimos/${emprestimoId}/editar`)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowNovoPagamento(true)}
+                className="bg-green-600 text-white hover:bg-green-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Pagamento
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleDelete}
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Deletar
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Informações Principais */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Resumo do Empréstimo */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CreditCard className="h-5 w-5" />
+                    <span>Resumo do Empréstimo</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Valor Principal</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {formatCurrency(emprestimo.valor)}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Valor Total</p>
+                      <p className="text-lg font-semibold text-blue-600">
+                        {formatCurrency(emprestimo.valorTotal)}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Valor Pago</p>
+                      <p className="text-lg font-semibold text-green-600">
+                        {formatCurrency(valorPago)}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Valor Restante</p>
+                      <p className="text-lg font-semibold text-orange-600">
+                        {formatCurrency(valorRestante)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Progresso do Pagamento</span>
+                      <span className="font-medium">{progresso.toFixed(1)}%</span>
+                    </div>
+                    <Progress value={progresso} className="h-2" />
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Taxa de Juros</p>
+                      <p className="font-medium">{emprestimo.taxaJuros}%</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Número de Parcelas</p>
+                      <p className="font-medium">{emprestimo.numeroParcelas}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Valor da Parcela</p>
+                      <p className="font-medium">{formatCurrency(emprestimo.valorParcela)}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <div>{getStatusBadge(emprestimo.status)}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Informações do Cliente */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <User className="h-5 w-5" />
+                    <span>Informações do Cliente</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Nome</p>
+                      <p className="font-medium">{emprestimo.cliente.nome}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium">{emprestimo.cliente.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Telefone</p>
+                      <p className="font-medium">{emprestimo.cliente.telefone}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Data do Empréstimo</p>
+                      <p className="font-medium">{formatDate(emprestimo.dataEmprestimo)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Cronograma de Pagamentos */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Calendar className="h-5 w-5" />
+                    <span>Cronograma de Pagamentos</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Parcelas diárias de {formatCurrency(emprestimo.valorParcela)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Parcela</TableHead>
+                          <TableHead>Vencimento</TableHead>
+                          <TableHead>Valor</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Pagamento</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Array.from({ length: emprestimo.numeroParcelas }, (_, index) => {
+                          const parcela = index + 1;
+                          const dataVencimento = new Date(emprestimo.dataEmprestimo);
+                          dataVencimento.setDate(dataVencimento.getDate() + index);
+                          
+                          const pagamento = emprestimo.pagamentos.find(p => p.numeroParcela === parcela);
+                          const status = pagamento ? 'PAGO' : 
+                                       dataVencimento < new Date() ? 'EM_ATRASO' : 'PENDENTE';
+                          
+                          return (
+                            <TableRow key={parcela}>
+                              <TableCell className="font-medium">{parcela}</TableCell>
+                              <TableCell>{formatDate(dataVencimento.toISOString())}</TableCell>
+                              <TableCell>{formatCurrency(emprestimo.valorParcela)}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  {getStatusIcon(status)}
+                                  <span className={status === 'PAGO' ? 'text-green-600' : 
+                                                 status === 'EM_ATRASO' ? 'text-red-600' : 
+                                                 'text-yellow-600'}>
+                                    {status}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {pagamento ? (
+                                  <div className="text-sm">
+                                    <div>{formatDate(pagamento.dataPagamento)}</div>
+                                    <div className="text-muted-foreground">
+                                      {pagamento.formaPagamento}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Estatísticas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <TrendingUp className="h-5 w-5" />
+                    <span>Estatísticas</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Parcelas Pagas</span>
+                      <span className="font-medium">{emprestimo.pagamentos.length}/{emprestimo.numeroParcelas}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Juros Totais</span>
+                      <span className="font-medium text-green-600">
+                        {formatCurrency(emprestimo.valorTotal - emprestimo.valor)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Juros Recebidos</span>
+                      <span className="font-medium text-green-600">
+                        {formatCurrency((emprestimo.valorTotal - emprestimo.valor) * (valorPago / emprestimo.valorTotal))}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Observações */}
+              {emprestimo.observacoes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Observações</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {emprestimo.observacoes}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+
           {/* Modal de Novo Pagamento */}
           <NovoPagamentoModal
             isOpen={showNovoPagamento}
@@ -198,267 +496,7 @@ export default function DetalhesEmprestimoPage() {
             valorRestante={valorRestante}
             onPagamentoCriado={handlePagamentoCriado}
           />
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <button
-                onClick={() => router.back()}
-                className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Voltar
-              </button>
-              <h1 className="text-3xl font-bold text-gray-900">Detalhes do Empréstimo</h1>
-              <p className="text-gray-600 mt-2">
-                Empréstimo de {emprestimo.cliente.nome}
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => router.push(`/emprestimos/${emprestimoId}/editar`)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                Editar
-              </button>
-              <button
-                onClick={handleDelete}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                Deletar
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Informações do Empréstimo */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Card Principal */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900">Informações do Empréstimo</h2>
-                  <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(emprestimo.status)}`}>
-                    {emprestimo.status}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Valor Original</h3>
-                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(emprestimo.valor)}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Valor Total</h3>
-                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(emprestimo.valorTotal)}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Valor da Parcela</h3>
-                    <p className="text-lg font-semibold text-gray-900">{formatCurrency(emprestimo.valorParcela)}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Taxa de Juros</h3>
-                    <p className="text-lg font-semibold text-gray-900">{emprestimo.taxaJuros}% (fixa)</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Prazo</h3>
-                    <p className="text-lg font-semibold text-gray-900">{emprestimo.numeroParcelas} dias (cobrança diária)</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Data do Empréstimo</h3>
-                    <p className="text-lg font-semibold text-gray-900">{formatDate(emprestimo.dataEmprestimo)}</p>
-                  </div>
-                </div>
-
-                {emprestimo.observacoes && (
-                  <div className="mt-6">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Observações</h3>
-                    <p className="text-gray-900 bg-gray-50 p-3 rounded">{emprestimo.observacoes}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Progresso do Pagamento */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Progresso do Pagamento</h2>
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Valor Pago</span>
-                    <span className="font-medium text-green-600">{formatCurrency(valorPago)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Valor Restante</span>
-                    <span className="font-medium text-red-600">{formatCurrency(valorRestante)}</span>
-                  </div>
-                  
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                      style={{ width: `${progresso}%` }}
-                    ></div>
-                  </div>
-                  
-                  <div className="text-center text-sm text-gray-500">
-                    {progresso.toFixed(1)}% pago
-                  </div>
-                </div>
-              </div>
-
-              {/* Cronograma de Parcelas */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Cronograma de Parcelas Diárias</h2>
-                
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Dia
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Data
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Valor
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {Array.from({ length: emprestimo.numeroParcelas }, (_, index) => {
-                        const dia = index + 1;
-                        const dataVencimento = new Date(emprestimo.dataEmprestimo);
-                        dataVencimento.setDate(dataVencimento.getDate() + dia);
-                        
-                        const pagamento = emprestimo.pagamentos.find(p => p.numeroParcela === dia);
-                        const status = pagamento ? 'PAGO' : 'PENDENTE';
-                        const isVencido = new Date() > dataVencimento && !pagamento;
-                        
-                        return (
-                          <tr key={dia} className={isVencido ? 'bg-red-50' : ''}>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {dia}º dia
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {formatDate(dataVencimento.toISOString())}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                              {formatCurrency(emprestimo.valorParcela)}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                status === 'PAGO' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : isVencido
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {status === 'PAGO' ? 'PAGO' : isVencido ? 'VENCIDO' : 'PENDENTE'}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Lista de Pagamentos */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-900">Pagamentos</h2>
-                    {emprestimo.status === 'ATIVO' && (
-                      <button
-                        onClick={() => setShowNovoPagamento(true)}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
-                      >
-                        Novo Pagamento
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-6">
-                  {emprestimo.pagamentos.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="text-gray-400 mb-4">
-                        <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum pagamento registrado</h3>
-                      <p className="text-gray-500">Os pagamentos aparecerão aqui quando forem registrados.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                                             {emprestimo.pagamentos.map((pagamento) => (
-                         <div key={pagamento.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                           <div>
-                             <div className="font-medium text-gray-900">{formatCurrency(pagamento.valorPago)}</div>
-                             <div className="text-sm text-gray-500">
-                               {formatDateTime(pagamento.dataPagamento)} • {pagamento.formaPagamento}
-                             </div>
-                             {pagamento.observacoes && (
-                               <div className="text-sm text-gray-600 mt-1">{pagamento.observacoes}</div>
-                             )}
-                           </div>
-                         </div>
-                       ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Sidebar - Informações do Cliente */}
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Informações do Cliente</h2>
-                
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Nome</h3>
-                    <p className="text-gray-900 font-medium">{emprestimo.cliente.nome}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Email</h3>
-                    <p className="text-gray-900">{emprestimo.cliente.email}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Telefone</h3>
-                    <p className="text-gray-900">{emprestimo.cliente.telefone}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">CPF</h3>
-                    <p className="text-gray-900">{emprestimo.cliente.cpf}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Endereço</h3>
-                    <p className="text-gray-900">{emprestimo.cliente.endereco}</p>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => router.push(`/clientes/${emprestimo.cliente.id}`)}
-                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Ver Cliente
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </main>
       </div>
     </ProtectedRoute>
   );

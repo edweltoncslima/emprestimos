@@ -26,6 +26,15 @@ export async function GET() {
     // Buscar clientes do usuário
     const clientes = await prisma.cliente.findMany({
       where: { userId: user.id },
+      include: {
+        emprestimos: {
+          select: {
+            id: true,
+            valor: true,
+            status: true,
+          }
+        }
+      },
       orderBy: { createdAt: "desc" },
     });
 

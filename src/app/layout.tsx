@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sistema de Empréstimos",
-  description: "Sistema de gerenciamento de empréstimos com autenticação",
+  title: "Sistema de Empréstimos - Controle Financeiro",
+  description: "Sistema profissional de gerenciamento de empréstimos com controle de caixa e análise de lucros",
 };
 
 export default function RootLayout({
@@ -25,9 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="pt-BR">
+      <html lang="pt-BR" className="dark">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
         >
           {children}
         </body>

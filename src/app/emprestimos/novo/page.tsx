@@ -4,6 +4,24 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import BankNavigation from '@/components/BankNavigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { 
+  ArrowLeft, 
+  Save, 
+  Calculator, 
+  CreditCard, 
+  Users,
+  DollarSign,
+  Calendar,
+  TrendingUp
+} from 'lucide-react';
 
 interface Cliente {
   id: string;
@@ -17,21 +35,37 @@ export default function NovoEmprestimoPage() {
   const router = useRouter();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
-    clienteId: '',
-    valor: '',
-    taxaJuros: '',
-    prazoMeses: '',
-    dataEmprestimo: new Date().toISOString().split('T')[0],
-    observacoes: ''
-  });
+  // Form state
+  const [clienteId, setClienteId] = useState('');
+  const [valor, setValor] = useState('');
+  const [numeroParcelas, setNumeroParcelas] = useState('20');
+  const [observacoes, setObservacoes] = useState('');
+
+  // Calculated values
+  const [valorTotal, setValorTotal] = useState(0);
+  const [valorParcela, setValorParcela] = useState(0);
+  const [taxaJuros, setTaxaJuros] = useState(20);
 
   useEffect(() => {
     fetchClientes();
   }, []);
+
+  useEffect(() => {
+    if (valor && numeroParcelas) {
+      const valorNum = parseFloat(valor);
+      const parcelasNum = parseInt(numeroParcelas);
+      
+      if (!isNaN(valorNum) && !isNaN(parcelasNum)) {
+        const total = valorNum * (1 + taxaJuros / 100);
+        const parcela = total / parcelasNum;
+        
+        setValorTotal(total);
+        setValorParcela(parcela);
+      }
+    }
+  }, [valor, numeroParcelas, taxaJuros]);
 
   const fetchClientes = async () => {
     try {
@@ -44,47 +78,18 @@ export default function NovoEmprestimoPage() {
     } catch (err) {
       setError('Erro ao carregar clientes');
       console.error(err);
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const calcularValorTotal = () => {
-    const valor = parseFloat(formData.valor) || 0;
-    const prazoMeses = parseFloat(formData.prazoMeses) || 0;
-
-    if (valor && prazoMeses) {
-      // Taxa fixa de 20%
-      const valorTotal = valor * 1.20; // 20% de juros
-      const valorParcela = valorTotal / prazoMeses;
-      return {
-        valorTotal: valorTotal.toFixed(2),
-        valorParcela: valorParcela.toFixed(2)
-      };
-    }
-    return { valorTotal: '0,00', valorParcela: '0,00' };
-  };
-
-  const formatCurrency = (value: string) => {
-    const numValue = parseFloat(value);
-    if (isNaN(numValue)) return 'R$ 0,00';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(numValue);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
+    
+    if (!clienteId || !valor || !numeroParcelas) {
+      setError('Por favor, preencha todos os campos obrigatórios');
+      return;
+    }
+
+    setLoading(true);
     setError('');
 
     try {
@@ -94,10 +99,13 @@ export default function NovoEmprestimoPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
-          valor: parseFloat(formData.valor),
-          taxaJuros: 20, // Taxa fixa de 20%
-          prazoMeses: parseInt(formData.prazoMeses),
+          clienteId,
+          valor: parseFloat(valor),
+          valorTotal,
+          valorParcela,
+          taxaJuros,
+          numeroParcelas: parseInt(numeroParcelas),
+          observacoes,
         }),
       });
 
@@ -106,36 +114,44 @@ export default function NovoEmprestimoPage() {
         throw new Error(errorData.error || 'Erro ao criar empréstimo');
       }
 
-      const emprestimo = await response.json();
-      router.push(`/emprestimos/${emprestimo.id}`);
+      const data = await response.json();
+      router.push(`/emprestimos/${data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar empréstimo');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const { valorTotal, valorParcela } = calcularValorTotal();
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
 
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gray-50 p-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-              <div className="bg-white p-6 rounded-lg shadow">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+          <BankNavigation />
+          <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="animate-pulse space-y-6">
+              <div className="h-8 bg-muted rounded w-1/4"></div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-16 bg-muted rounded"></div>
+                  ))}
+                </div>
                 <div className="space-y-4">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i}>
-                      <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                      <div className="h-10 bg-gray-200 rounded"></div>
-                    </div>
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="h-32 bg-muted rounded"></div>
                   ))}
                 </div>
               </div>
             </div>
-          </div>
+          </main>
         </div>
       </ProtectedRoute>
     );
@@ -143,193 +159,254 @@ export default function NovoEmprestimoPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-2xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <BankNavigation />
+        
+        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="mb-8">
-            <button
+          <div className="flex items-center space-x-4 mb-8">
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => router.back()}
-              className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+              className="flex items-center space-x-2"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Voltar
-            </button>
-            <h1 className="text-3xl font-bold text-gray-900">Novo Empréstimo</h1>
-            <p className="text-gray-600 mt-2">
-              Crie um novo empréstimo para um cliente
-            </p>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-              {error}
+              <ArrowLeft className="h-4 w-4" />
+              <span>Voltar</span>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Novo Empréstimo</h1>
+              <p className="text-muted-foreground mt-2">
+                Crie um novo empréstimo com cobrança diária
+              </p>
             </div>
-          )}
-
-          {/* Form */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Cliente */}
-              <div>
-                <label htmlFor="clienteId" className="block text-sm font-medium text-gray-700 mb-2">
-                  Cliente *
-                </label>
-                <select
-                  id="clienteId"
-                  name="clienteId"
-                  value={formData.clienteId}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Selecione um cliente</option>
-                  {clientes.map((cliente) => (
-                    <option key={cliente.id} value={cliente.id}>
-                      {cliente.nome} - {cliente.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Valor */}
-              <div>
-                <label htmlFor="valor" className="block text-sm font-medium text-gray-700 mb-2">
-                  Valor do Empréstimo (R$) *
-                </label>
-                <input
-                  type="number"
-                  id="valor"
-                  name="valor"
-                  value={formData.valor}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0,00"
-                />
-              </div>
-
-              {/* Taxa de Juros (Fixa 20%) */}
-              <div>
-                <label htmlFor="taxaJuros" className="block text-sm font-medium text-gray-700 mb-2">
-                  Taxa de Juros (Fixa 20%)
-                </label>
-                <input
-                  type="text"
-                  id="taxaJuros"
-                  name="taxaJuros"
-                  value="20"
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-500"
-                />
-                <p className="text-sm text-gray-500 mt-1">Taxa fixa de 20% aplicada automaticamente</p>
-              </div>
-
-              {/* Prazo */}
-              <div>
-                <label htmlFor="prazoMeses" className="block text-sm font-medium text-gray-700 mb-2">
-                  Prazo (dias) *
-                </label>
-                <select
-                  id="prazoMeses"
-                  name="prazoMeses"
-                  value={formData.prazoMeses}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Selecione o prazo</option>
-                  <option value="20">20 dias</option>
-                  <option value="24">24 dias</option>
-                </select>
-                <p className="text-sm text-gray-500 mt-1">Cobrança diária com 20% de juros</p>
-              </div>
-
-              {/* Data do Empréstimo */}
-              <div>
-                <label htmlFor="dataEmprestimo" className="block text-sm font-medium text-gray-700 mb-2">
-                  Data do Empréstimo
-                </label>
-                <input
-                  type="date"
-                  id="dataEmprestimo"
-                  name="dataEmprestimo"
-                  value={formData.dataEmprestimo}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              {/* Observações */}
-              <div>
-                <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700 mb-2">
-                  Observações
-                </label>
-                <textarea
-                  id="observacoes"
-                  name="observacoes"
-                  value={formData.observacoes}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Observações sobre o empréstimo..."
-                />
-              </div>
-
-              {/* Resumo do Cálculo */}
-              {(formData.valor && formData.prazoMeses) && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-blue-900 mb-2">Resumo do Cálculo</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-blue-700">Valor Emprestado:</span>
-                      <span className="ml-2 font-medium text-blue-900">{formatCurrency(formData.valor)}</span>
-                    </div>
-                    <div>
-                      <span className="text-blue-700">Juros (20%):</span>
-                      <span className="ml-2 font-medium text-blue-900">{formatCurrency((parseFloat(formData.valor) * 0.20).toString())}</span>
-                    </div>
-                    <div>
-                      <span className="text-blue-700">Valor Total:</span>
-                      <span className="ml-2 font-medium text-blue-900">{formatCurrency(valorTotal)}</span>
-                    </div>
-                    <div>
-                      <span className="text-blue-700">Valor da Parcela:</span>
-                      <span className="ml-2 font-medium text-blue-900">{formatCurrency(valorParcela)}</span>
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-blue-200">
-                    <p className="text-xs text-blue-700">
-                      <strong>Cobrança:</strong> {formData.prazoMeses} parcelas diárias de {formatCurrency(valorParcela)} cada
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Buttons */}
-              <div className="flex justify-end space-x-4 pt-6">
-                <button
-                  type="button"
-                  onClick={() => router.back()}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? 'Criando...' : 'Criar Empréstimo'}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Form */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CreditCard className="h-5 w-5" />
+                    <span>Dados do Empréstimo</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Preencha as informações do empréstimo
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Error Message */}
+                    {error && (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-red-700 text-sm">{error}</p>
+                      </div>
+                    )}
+
+                    {/* Cliente */}
+                    <div className="space-y-2">
+                      <Label htmlFor="cliente">Cliente *</Label>
+                      <Select value={clienteId} onValueChange={setClienteId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um cliente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clientes.map((cliente) => (
+                            <SelectItem key={cliente.id} value={cliente.id}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{cliente.nome}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {cliente.email}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Valor */}
+                    <div className="space-y-2">
+                      <Label htmlFor="valor">Valor do Empréstimo (R$) *</Label>
+                      <Input
+                        id="valor"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={valor}
+                        onChange={(e) => setValor(e.target.value)}
+                        placeholder="0,00"
+                        className="text-lg font-medium"
+                      />
+                    </div>
+
+                    {/* Número de Parcelas */}
+                    <div className="space-y-2">
+                      <Label htmlFor="parcelas">Número de Parcelas *</Label>
+                      <Select value={numeroParcelas} onValueChange={setNumeroParcelas}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o número de parcelas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="20">20 dias (diário)</SelectItem>
+                          <SelectItem value="24">24 dias (diário)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Taxa de Juros (Fixed) */}
+                    <div className="space-y-2">
+                      <Label>Taxa de Juros</Label>
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          value={`${taxaJuros}%`}
+                          disabled
+                          className="bg-muted"
+                        />
+                        <Badge variant="secondary" className="text-xs">
+                          Taxa Fixa
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Observações */}
+                    <div className="space-y-2">
+                      <Label htmlFor="observacoes">Observações</Label>
+                      <Textarea
+                        id="observacoes"
+                        value={observacoes}
+                        onChange={(e) => setObservacoes(e.target.value)}
+                        placeholder="Observações sobre o empréstimo..."
+                        rows={3}
+                      />
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="flex justify-end space-x-4 pt-6">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => router.back()}
+                        disabled={loading}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={loading} className="font-medium">
+                        {loading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Criando...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Criar Empréstimo
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Summary */}
+            <div className="space-y-6">
+              {/* Calculation Summary */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Calculator className="h-5 w-5" />
+                    <span>Resumo do Empréstimo</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Valor Principal</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {valor ? formatCurrency(parseFloat(valor)) : 'R$ 0,00'}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Taxa de Juros</p>
+                      <p className="text-lg font-semibold text-green-600">
+                        {taxaJuros}%
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Valor Total</p>
+                      <p className="text-lg font-semibold text-blue-600">
+                        {formatCurrency(valorTotal)}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Valor da Parcela</p>
+                      <p className="text-lg font-semibold text-orange-600">
+                        {formatCurrency(valorParcela)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Número de Parcelas</span>
+                        <span className="font-medium">{numeroParcelas} dias</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Juros Totais</span>
+                        <span className="font-medium text-green-600">
+                          {valor ? formatCurrency(valorTotal - parseFloat(valor)) : 'R$ 0,00'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Features */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <TrendingUp className="h-5 w-5" />
+                    <span>Características</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Cobrança Diária</p>
+                      <p className="text-xs text-muted-foreground">
+                        Parcelas pagas diariamente
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Taxa Fixa</p>
+                      <p className="text-xs text-muted-foreground">
+                        20% de juros sobre o valor
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Users className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Controle Completo</p>
+                      <p className="text-xs text-muted-foreground">
+                        Acompanhamento de pagamentos
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
       </div>
     </ProtectedRoute>
   );
