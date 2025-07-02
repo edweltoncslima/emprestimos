@@ -28,6 +28,8 @@ model User {
   clientes    Cliente[]
   emprestimos Emprestimo[]
   pagamentos  Pagamento[]
+  caixa       Caixa[]
+  movimentacoes MovimentacaoCaixa[]
 
   @@map("users")
 }
@@ -55,12 +57,48 @@ model Cliente {
   @@map("clientes")
 }
 
+// Modelo para controle de caixa
+model Caixa {
+  id            String   @id @default(cuid())
+  saldoInicial  Decimal  @db.Decimal(10, 2)
+  saldoAtual    Decimal  @db.Decimal(10, 2)
+  dataInicial   DateTime @default(now())
+  observacoes   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relacionamentos
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("caixa")
+}
+
+// Modelo para movimentações de caixa
+model MovimentacaoCaixa {
+  id            String   @id @default(cuid())
+  tipo          TipoMovimentacao
+  valor         Decimal  @db.Decimal(10, 2)
+  descricao     String
+  dataMovimentacao DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relacionamentos
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emprestimoId  String?
+  emprestimo    Emprestimo?  @relation(fields: [emprestimoId], references: [id], onDelete: SetNull)
+
+  @@map("movimentacoes_caixa")
+}
+
 // Modelo para empréstimos
 model Emprestimo {
   id              String   @id @default(cuid())
   valor           Decimal  @db.Decimal(10, 2)
   valorTotal      Decimal  @db.Decimal(10, 2) // Valor com juros
-  taxaJuros       Decimal  @db.Decimal(5, 4)  // Taxa de juros mensal (ex: 0.02 = 2%)
+  taxaJuros       Float    // Taxa de juros fixa (ex: 20.0 = 20%)
   numeroParcelas  Int
   valorParcela    Decimal  @db.Decimal(10, 2)
   dataEmprestimo  DateTime @default(now())
@@ -76,6 +114,7 @@ model Emprestimo {
   userId          String
   user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   pagamentos      Pagamento[]
+  movimentacoes   MovimentacaoCaixa[]
 
   @@map("emprestimos")
 }
@@ -125,4 +164,9 @@ enum FormaPagamento {
   CARTAO_DEBITO
   TRANSFERENCIA
   BOLETO
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
 }

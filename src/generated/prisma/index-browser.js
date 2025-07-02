@@ -146,6 +146,29 @@ exports.Prisma.ClienteScalarFieldEnum = {
   userId: 'userId'
 };
 
+exports.Prisma.CaixaScalarFieldEnum = {
+  id: 'id',
+  saldoInicial: 'saldoInicial',
+  saldoAtual: 'saldoAtual',
+  dataInicial: 'dataInicial',
+  observacoes: 'observacoes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  userId: 'userId'
+};
+
+exports.Prisma.MovimentacaoCaixaScalarFieldEnum = {
+  id: 'id',
+  tipo: 'tipo',
+  valor: 'valor',
+  descricao: 'descricao',
+  dataMovimentacao: 'dataMovimentacao',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  userId: 'userId',
+  emprestimoId: 'emprestimoId'
+};
+
 exports.Prisma.EmprestimoScalarFieldEnum = {
   id: 'id',
   valor: 'valor',
@@ -193,6 +216,11 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.TipoMovimentacao = exports.$Enums.TipoMovimentacao = {
+  ENTRADA: 'ENTRADA',
+  SAIDA: 'SAIDA'
+};
+
 exports.StatusEmprestimo = exports.$Enums.StatusEmprestimo = {
   ATIVO: 'ATIVO',
   QUITADO: 'QUITADO',
@@ -219,6 +247,8 @@ exports.FormaPagamento = exports.$Enums.FormaPagamento = {
 exports.Prisma.ModelName = {
   User: 'User',
   Cliente: 'Cliente',
+  Caixa: 'Caixa',
+  MovimentacaoCaixa: 'MovimentacaoCaixa',
   Emprestimo: 'Emprestimo',
   Pagamento: 'Pagamento'
 };

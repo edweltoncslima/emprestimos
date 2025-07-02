@@ -1,223 +1,294 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('../src/generated/prisma');
 
 const prisma = new PrismaClient();
 
-async function populateDatabase() {
-  try {
-    console.log('🌱 Iniciando população do banco de dados...');
+async function main() {
+  console.log('🌱 Iniciando população do banco de dados...');
 
-    // Criar clientes de exemplo
-    const clientes = await Promise.all([
-      prisma.cliente.create({
-        data: {
-          nome: 'João Silva',
-          email: 'joao.silva@email.com',
-          telefone: '(11) 99999-1111',
-          cpf: '123.456.789-00',
-          endereco: 'Rua das Flores, 123 - São Paulo, SP'
-        }
-      }),
-      prisma.cliente.create({
-        data: {
-          nome: 'Maria Santos',
-          email: 'maria.santos@email.com',
-          telefone: '(11) 99999-2222',
-          cpf: '987.654.321-00',
-          endereco: 'Av. Paulista, 456 - São Paulo, SP'
-        }
-      }),
-      prisma.cliente.create({
-        data: {
-          nome: 'Pedro Oliveira',
-          email: 'pedro.oliveira@email.com',
-          telefone: '(11) 99999-3333',
-          cpf: '456.789.123-00',
-          endereco: 'Rua Augusta, 789 - São Paulo, SP'
-        }
-      }),
-      prisma.cliente.create({
-        data: {
-          nome: 'Ana Costa',
-          email: 'ana.costa@email.com',
-          telefone: '(11) 99999-4444',
-          cpf: '789.123.456-00',
-          endereco: 'Rua Oscar Freire, 321 - São Paulo, SP'
-        }
-      }),
-      prisma.cliente.create({
-        data: {
-          nome: 'Carlos Ferreira',
-          email: 'carlos.ferreira@email.com',
-          telefone: '(11) 99999-5555',
-          cpf: '321.654.987-00',
-          endereco: 'Av. Brigadeiro Faria Lima, 654 - São Paulo, SP'
-        }
-      })
-    ]);
+  // Criar usuário de teste
+  const user = await prisma.user.upsert({
+    where: { clerkId: 'test_user_123' },
+    update: {},
+    create: {
+      clerkId: 'test_user_123',
+      email: 'teste@emprestimos.com',
+      firstName: 'João',
+      lastName: 'Silva'
+    }
+  });
 
-    console.log(`✅ ${clientes.length} clientes criados`);
+  console.log('✅ Usuário criado:', user.email);
 
-    // Criar empréstimos de exemplo
-    const emprestimos = await Promise.all([
-      prisma.emprestimo.create({
-        data: {
-          clienteId: clientes[0].id,
-          valor: 5000.00,
-          valorTotal: 6000.00,
-          valorParcela: 500.00,
-          taxaJuros: 2.0,
-          prazoMeses: 12,
-          dataEmprestimo: new Date('2024-01-15'),
-          status: 'ATIVO',
-          observacoes: 'Empréstimo para reforma da casa'
-        }
-      }),
-      prisma.emprestimo.create({
-        data: {
-          clienteId: clientes[1].id,
-          valor: 3000.00,
-          valorTotal: 3600.00,
-          valorParcela: 300.00,
-          taxaJuros: 2.5,
-          prazoMeses: 12,
-          dataEmprestimo: new Date('2024-02-01'),
-          status: 'ATIVO',
-          observacoes: 'Empréstimo para compra de eletrodomésticos'
-        }
-      }),
-      prisma.emprestimo.create({
-        data: {
-          clienteId: clientes[2].id,
-          valor: 8000.00,
-          valorTotal: 9600.00,
-          valorParcela: 800.00,
-          taxaJuros: 1.8,
-          prazoMeses: 12,
-          dataEmprestimo: new Date('2024-01-20'),
-          status: 'QUITADO',
-          observacoes: 'Empréstimo para viagem'
-        }
-      }),
-      prisma.emprestimo.create({
-        data: {
-          clienteId: clientes[3].id,
-          valor: 2000.00,
-          valorTotal: 2400.00,
-          valorParcela: 200.00,
-          taxaJuros: 3.0,
-          prazoMeses: 12,
-          dataEmprestimo: new Date('2024-03-10'),
-          status: 'ATIVO',
-          observacoes: 'Empréstimo para cursos'
-        }
-      }),
-      prisma.emprestimo.create({
-        data: {
-          clienteId: clientes[4].id,
-          valor: 10000.00,
-          valorTotal: 12000.00,
-          valorParcela: 1000.00,
-          taxaJuros: 1.5,
-          prazoMeses: 12,
-          dataEmprestimo: new Date('2024-02-15'),
-          status: 'INADIMPLENTE',
-          observacoes: 'Empréstimo para negócio próprio'
-        }
-      })
-    ]);
+  // Criar caixa inicial
+  let caixa = await prisma.caixa.findFirst({
+    where: { userId: user.id }
+  });
 
-    console.log(`✅ ${emprestimos.length} empréstimos criados`);
-
-    // Criar pagamentos de exemplo
-    const pagamentos = await Promise.all([
-      // Pagamentos para o primeiro empréstimo (ativo)
-      prisma.pagamento.create({
-        data: {
-          emprestimoId: emprestimos[0].id,
-          valor: 500.00,
-          dataPagamento: new Date('2024-02-15'),
-          metodoPagamento: 'PIX',
-          observacoes: 'Primeira parcela'
-        }
-      }),
-      prisma.pagamento.create({
-        data: {
-          emprestimoId: emprestimos[0].id,
-          valor: 500.00,
-          dataPagamento: new Date('2024-03-15'),
-          metodoPagamento: 'CARTAO_CREDITO',
-          observacoes: 'Segunda parcela'
-        }
-      }),
-      prisma.pagamento.create({
-        data: {
-          emprestimoId: emprestimos[0].id,
-          valor: 500.00,
-          dataPagamento: new Date('2024-04-15'),
-          metodoPagamento: 'PIX',
-          observacoes: 'Terceira parcela'
-        }
-      }),
-
-      // Pagamentos para o segundo empréstimo (ativo)
-      prisma.pagamento.create({
-        data: {
-          emprestimoId: emprestimos[1].id,
-          valor: 300.00,
-          dataPagamento: new Date('2024-03-01'),
-          metodoPagamento: 'BOLETO',
-          observacoes: 'Primeira parcela'
-        }
-      }),
-      prisma.pagamento.create({
-        data: {
-          emprestimoId: emprestimos[1].id,
-          valor: 300.00,
-          dataPagamento: new Date('2024-04-01'),
-          metodoPagamento: 'PIX',
-          observacoes: 'Segunda parcela'
-        }
-      }),
-
-      // Pagamentos para o terceiro empréstimo (quitado)
-      ...Array.from({ length: 12 }, (_, i) => 
-        prisma.pagamento.create({
-          data: {
-            emprestimoId: emprestimos[2].id,
-            valor: 800.00,
-            dataPagamento: new Date(`2024-${String(i + 2).padStart(2, '0')}-20`),
-            metodoPagamento: i % 2 === 0 ? 'PIX' : 'CARTAO_CREDITO',
-            observacoes: `Parcela ${i + 1}`
-          }
-        })
-      ),
-
-      // Pagamento para o quarto empréstimo (ativo)
-      prisma.pagamento.create({
-        data: {
-          emprestimoId: emprestimos[3].id,
-          valor: 200.00,
-          dataPagamento: new Date('2024-04-10'),
-          metodoPagamento: 'TRANSFERENCIA',
-          observacoes: 'Primeira parcela'
-        }
-      })
-    ]);
-
-    console.log(`✅ ${pagamentos.length} pagamentos criados`);
-
-    console.log('🎉 Banco de dados populado com sucesso!');
-    console.log('\n📊 Resumo:');
-    console.log(`- ${clientes.length} clientes`);
-    console.log(`- ${emprestimos.length} empréstimos`);
-    console.log(`- ${pagamentos.length} pagamentos`);
-
-  } catch (error) {
-    console.error('❌ Erro ao popular banco de dados:', error);
-  } finally {
-    await prisma.$disconnect();
+  if (!caixa) {
+    caixa = await prisma.caixa.create({
+      data: {
+        userId: user.id,
+        saldoInicial: 50000.00,
+        saldoAtual: 50000.00,
+        observacoes: 'Saldo inicial para testes'
+      }
+    });
   }
+
+  console.log('✅ Caixa configurado com saldo inicial de R$ 50.000,00');
+
+  // Criar clientes de teste
+  const clientes = await Promise.all([
+    prisma.cliente.upsert({
+      where: { email: 'maria.silva@email.com' },
+      update: {},
+      create: {
+        userId: user.id,
+        nome: 'Maria Silva',
+        email: 'maria.silva@email.com',
+        telefone: '(11) 99999-1111',
+        cpf: '123.456.789-01',
+        endereco: 'Rua das Flores, 123 - São Paulo/SP',
+        cidade: 'São Paulo',
+        estado: 'SP',
+        cep: '01234-567'
+      }
+    }),
+    prisma.cliente.upsert({
+      where: { email: 'pedro.santos@email.com' },
+      update: {},
+      create: {
+        userId: user.id,
+        nome: 'Pedro Santos',
+        email: 'pedro.santos@email.com',
+        telefone: '(11) 99999-2222',
+        cpf: '987.654.321-09',
+        endereco: 'Av. Paulista, 456 - São Paulo/SP',
+        cidade: 'São Paulo',
+        estado: 'SP',
+        cep: '01310-100'
+      }
+    }),
+    prisma.cliente.upsert({
+      where: { email: 'ana.oliveira@email.com' },
+      update: {},
+      create: {
+        userId: user.id,
+        nome: 'Ana Oliveira',
+        email: 'ana.oliveira@email.com',
+        telefone: '(11) 99999-3333',
+        cpf: '456.789.123-45',
+        endereco: 'Rua Augusta, 789 - São Paulo/SP',
+        cidade: 'São Paulo',
+        estado: 'SP',
+        cep: '01212-000'
+      }
+    })
+  ]);
+
+  console.log('✅ Clientes criados:', clientes.length);
+
+  // Criar empréstimos de teste
+  const emprestimos = await Promise.all([
+    // Empréstimo 1: R$ 5.000 em 20 dias
+    prisma.emprestimo.create({
+      data: {
+        userId: user.id,
+        clienteId: clientes[0].id,
+        valor: 5000.00,
+        valorTotal: 6000.00, // 5000 + 20% = 6000
+        valorParcela: 300.00, // 6000 / 20 = 300
+        taxaJuros: 20.00,
+        numeroParcelas: 20,
+        dataEmprestimo: new Date('2024-01-15'),
+        dataVencimento: new Date('2024-02-04'),
+        status: 'ATIVO',
+        observacoes: 'Empréstimo para reforma da casa'
+      }
+    }),
+    // Empréstimo 2: R$ 3.000 em 24 dias
+    prisma.emprestimo.create({
+      data: {
+        userId: user.id,
+        clienteId: clientes[1].id,
+        valor: 3000.00,
+        valorTotal: 3600.00, // 3000 + 20% = 3600
+        valorParcela: 150.00, // 3600 / 24 = 150
+        taxaJuros: 20.00,
+        numeroParcelas: 24,
+        dataEmprestimo: new Date('2024-01-20'),
+        dataVencimento: new Date('2024-02-13'),
+        status: 'ATIVO',
+        observacoes: 'Empréstimo para compra de eletrodomésticos'
+      }
+    }),
+    // Empréstimo 3: R$ 2.000 em 20 dias (parcialmente pago)
+    prisma.emprestimo.create({
+      data: {
+        userId: user.id,
+        clienteId: clientes[2].id,
+        valor: 2000.00,
+        valorTotal: 2400.00, // 2000 + 20% = 2400
+        valorParcela: 120.00, // 2400 / 20 = 120
+        taxaJuros: 20.00,
+        numeroParcelas: 20,
+        dataEmprestimo: new Date('2024-01-10'),
+        dataVencimento: new Date('2024-01-30'),
+        status: 'ATIVO',
+        observacoes: 'Empréstimo para pagamento de contas'
+      }
+    })
+  ]);
+
+  console.log('✅ Empréstimos criados:', emprestimos.length);
+
+  // Criar movimentações de saída para os empréstimos
+  await Promise.all([
+    prisma.movimentacaoCaixa.create({
+      data: {
+        userId: user.id,
+        tipo: 'SAIDA',
+        valor: 5000.00,
+        descricao: 'Empréstimo para Maria Silva',
+        emprestimoId: emprestimos[0].id
+      }
+    }),
+    prisma.movimentacaoCaixa.create({
+      data: {
+        userId: user.id,
+        tipo: 'SAIDA',
+        valor: 3000.00,
+        descricao: 'Empréstimo para Pedro Santos',
+        emprestimoId: emprestimos[1].id
+      }
+    }),
+    prisma.movimentacaoCaixa.create({
+      data: {
+        userId: user.id,
+        tipo: 'SAIDA',
+        valor: 2000.00,
+        descricao: 'Empréstimo para Ana Oliveira',
+        emprestimoId: emprestimos[2].id
+      }
+    })
+  ]);
+
+  // Atualizar saldo do caixa
+  await prisma.caixa.update({
+    where: { id: caixa.id },
+    data: {
+      saldoAtual: 40000.00 // 50000 - 10000 (total emprestado)
+    }
+  });
+
+  // Criar pagamentos de teste para o terceiro empréstimo
+  const pagamentos = await Promise.all([
+    // Pagamento da 1ª parcela
+    prisma.pagamento.create({
+      data: {
+        userId: user.id,
+        emprestimoId: emprestimos[2].id,
+        numeroParcela: 1,
+        valorParcela: 120.00,
+        valorPago: 120.00,
+        dataVencimento: new Date('2024-01-11'),
+        dataPagamento: new Date('2024-01-11'),
+        status: 'PAGO',
+        formaPagamento: 'PIX',
+        observacoes: 'Pagamento em dia'
+      }
+    }),
+    // Pagamento da 2ª parcela
+    prisma.pagamento.create({
+      data: {
+        userId: user.id,
+        emprestimoId: emprestimos[2].id,
+        numeroParcela: 2,
+        valorParcela: 120.00,
+        valorPago: 120.00,
+        dataVencimento: new Date('2024-01-12'),
+        dataPagamento: new Date('2024-01-12'),
+        status: 'PAGO',
+        formaPagamento: 'DINHEIRO',
+        observacoes: 'Pagamento em dia'
+      }
+    }),
+    // Pagamento da 3ª parcela
+    prisma.pagamento.create({
+      data: {
+        userId: user.id,
+        emprestimoId: emprestimos[2].id,
+        numeroParcela: 3,
+        valorParcela: 120.00,
+        valorPago: 120.00,
+        dataVencimento: new Date('2024-01-13'),
+        dataPagamento: new Date('2024-01-13'),
+        status: 'PAGO',
+        formaPagamento: 'PIX',
+        observacoes: 'Pagamento em dia'
+      }
+    })
+  ]);
+
+  console.log('✅ Pagamentos criados:', pagamentos.length);
+
+  // Criar movimentações de entrada para os pagamentos
+  await Promise.all([
+    prisma.movimentacaoCaixa.create({
+      data: {
+        userId: user.id,
+        tipo: 'ENTRADA',
+        valor: 120.00,
+        descricao: 'Pagamento parcela 1 - Ana Oliveira',
+        emprestimoId: emprestimos[2].id
+      }
+    }),
+    prisma.movimentacaoCaixa.create({
+      data: {
+        userId: user.id,
+        tipo: 'ENTRADA',
+        valor: 120.00,
+        descricao: 'Pagamento parcela 2 - Ana Oliveira',
+        emprestimoId: emprestimos[2].id
+      }
+    }),
+    prisma.movimentacaoCaixa.create({
+      data: {
+        userId: user.id,
+        tipo: 'ENTRADA',
+        valor: 120.00,
+        descricao: 'Pagamento parcela 3 - Ana Oliveira',
+        emprestimoId: emprestimos[2].id
+      }
+    })
+  ]);
+
+  // Atualizar saldo do caixa com os pagamentos recebidos
+  await prisma.caixa.update({
+    where: { id: caixa.id },
+    data: {
+      saldoAtual: 40360.00 // 40000 + 360 (pagamentos recebidos)
+    }
+  });
+
+  console.log('✅ Movimentações de caixa criadas');
+  console.log('✅ Saldo atual do caixa: R$ 40.360,00');
+
+  console.log('\n🎉 População do banco concluída com sucesso!');
+  console.log('\n📊 Resumo dos dados criados:');
+  console.log('- 1 usuário de teste');
+  console.log('- 1 caixa configurado');
+  console.log('- 3 clientes');
+  console.log('- 3 empréstimos (2 ativos, 1 com pagamentos parciais)');
+  console.log('- 3 pagamentos realizados');
+  console.log('- 6 movimentações de caixa');
 }
 
-// Executar o script
-populateDatabase(); 
+main()
+  .catch((e) => {
+    console.error('❌ Erro durante a população do banco:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  }); 

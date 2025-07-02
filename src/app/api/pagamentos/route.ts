@@ -113,9 +113,9 @@ export async function POST(request: NextRequest) {
     // Calcular número da parcela
     const numeroParcela = emprestimo.pagamentos.length + 1;
     
-    // Calcular data de vencimento da parcela
+    // Calcular data de vencimento da parcela (cobrança diária)
     const dataVencimento = new Date(emprestimo.dataEmprestimo);
-    dataVencimento.setMonth(dataVencimento.getMonth() + numeroParcela);
+    dataVencimento.setDate(dataVencimento.getDate() + numeroParcela);
 
     const pagamento = await prisma.pagamento.create({
       data: {
@@ -152,6 +152,31 @@ export async function POST(request: NextRequest) {
       await prisma.emprestimo.update({
         where: { id: emprestimoId },
         data: { status: 'QUITADO' }
+      });
+    }
+
+    // Criar movimentação de entrada no caixa
+    await prisma.movimentacaoCaixa.create({
+      data: {
+        userId: user.id,
+        tipo: 'ENTRADA',
+        valor,
+        descricao: `Pagamento parcela ${numeroParcela} - ${pagamento.emprestimo.cliente.nome}`,
+        emprestimoId: emprestimoId
+      }
+    });
+
+    // Atualizar saldo do caixa
+    const caixa = await prisma.caixa.findFirst({
+      where: { userId: user.id }
+    });
+
+    if (caixa) {
+      await prisma.caixa.update({
+        where: { id: caixa.id },
+        data: {
+          saldoAtual: Number(caixa.saldoAtual) + valor
+        }
       });
     }
 

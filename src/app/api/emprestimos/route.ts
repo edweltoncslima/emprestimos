@@ -87,13 +87,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
-    // Calcular valor total com juros
-    const valorTotal = valor * Math.pow(1 + taxaJuros / 100, prazoMeses);
+    // Calcular valor total com juros (20% para 20 ou 24 vezes)
+    const taxaJurosDiaria = 0.20 / prazoMeses; // 20% dividido pelo número de parcelas
+    const valorTotal = valor * (1 + 0.20); // 20% de juros total
     const valorParcela = valorTotal / prazoMeses;
     
-    // Calcular data de vencimento (prazoMeses meses após a data do empréstimo)
+    // Calcular data de vencimento (prazoMeses dias após a data do empréstimo)
     const dataVencimento = new Date(dataEmprestimo ? new Date(dataEmprestimo) : new Date());
-    dataVencimento.setMonth(dataVencimento.getMonth() + prazoMeses);
+    dataVencimento.setDate(dataVencimento.getDate() + prazoMeses);
 
     const emprestimo = await prisma.emprestimo.create({
       data: {
@@ -120,6 +121,31 @@ export async function POST(request: NextRequest) {
         }
       }
     });
+
+    // Criar movimentação de saída no caixa
+    await prisma.movimentacaoCaixa.create({
+      data: {
+        userId: user.id,
+        tipo: 'SAIDA',
+        valor,
+        descricao: `Empréstimo para ${emprestimo.cliente.nome}`,
+        emprestimoId: emprestimo.id
+      }
+    });
+
+    // Atualizar saldo do caixa
+    const caixa = await prisma.caixa.findFirst({
+      where: { userId: user.id }
+    });
+
+    if (caixa) {
+      await prisma.caixa.update({
+        where: { id: caixa.id },
+        data: {
+          saldoAtual: Number(caixa.saldoAtual) - valor
+        }
+      });
+    }
 
     return NextResponse.json(emprestimo, { status: 201 });
   } catch (error) {

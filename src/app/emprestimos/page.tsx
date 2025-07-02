@@ -161,7 +161,7 @@ export default function EmprestimosPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <div className="bg-white p-6 rounded-lg shadow">
               <h3 className="text-sm font-medium text-gray-500">Total de Empréstimos</h3>
               <p className="text-2xl font-bold text-gray-900">{emprestimos.length}</p>
@@ -182,6 +182,16 @@ export default function EmprestimosPage() {
               <h3 className="text-sm font-medium text-gray-500">Valor Total Emprestado</h3>
               <p className="text-2xl font-bold text-gray-900">
                 {formatCurrency(emprestimos.reduce((total, emp) => total + emp.valor, 0))}
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-sm font-medium text-gray-500">Margem de Lucro</h3>
+              <p className="text-2xl font-bold text-blue-600">
+                {formatCurrency(emprestimos.reduce((total, emp) => {
+                  const valorPago = emp.pagamentos.reduce((pagSum, pag) => pagSum + Number(pag.valorPago), 0);
+                  const proporcaoPaga = valorPago / Number(emp.valorTotal);
+                  return total + (Number(emp.valorTotal) - Number(emp.valor)) * proporcaoPaga;
+                }, 0))}
               </p>
             </div>
           </div>

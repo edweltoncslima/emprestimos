@@ -46,8 +46,11 @@ export default function Home() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
                   Bem-vindo ao Sistema de Empréstimos
                 </h2>
+                <p className="text-gray-600 mb-4">
+                  Sistema especializado em empréstimos com cobrança diária (20 ou 24 dias) e taxa fixa de 20% de juros.
+                </p>
                 <p className="text-gray-600 mb-8">
-                  Gerencie seus empréstimos de forma simples e eficiente.
+                  Gerencie seus empréstimos, controle seu caixa e acompanhe sua margem de lucro de forma simples e eficiente.
                 </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
@@ -71,7 +74,7 @@ export default function Home() {
                       Empréstimos
                     </h3>
                     <p className="text-gray-600 mb-4">
-                      Controle todos os empréstimos ativos e históricos.
+                      Controle empréstimos com cobrança diária (20/24 dias) e 20% de juros.
                     </p>
                     <Link 
                       href="/emprestimos"
@@ -98,6 +101,21 @@ export default function Home() {
                   
                   <div className="bg-white p-6 rounded-lg shadow-md">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Controle de Caixa
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Gerencie seu saldo e acompanhe suas movimentações.
+                    </p>
+                    <Link 
+                      href="/caixa"
+                      className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700"
+                    >
+                      Ver Caixa
+                    </Link>
+                  </div>
+                  
+                  <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
                       Teste do Banco
                     </h3>
                     <p className="text-gray-600 mb-4">
@@ -105,7 +123,7 @@ export default function Home() {
                     </p>
                     <Link 
                       href="/teste-db"
-                      className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700"
+                      className="inline-block bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700"
                     >
                       Testar Banco
                     </Link>

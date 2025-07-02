@@ -258,12 +258,12 @@ export default function DetalhesEmprestimoPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Taxa de Juros</h3>
-                    <p className="text-lg font-semibold text-gray-900">{emprestimo.taxaJuros}% ao mês</p>
+                    <p className="text-lg font-semibold text-gray-900">{emprestimo.taxaJuros}% (fixa)</p>
                   </div>
-                                     <div>
-                     <h3 className="text-sm font-medium text-gray-500 mb-2">Prazo</h3>
-                     <p className="text-lg font-semibold text-gray-900">{emprestimo.numeroParcelas} meses</p>
-                   </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Prazo</h3>
+                    <p className="text-lg font-semibold text-gray-900">{emprestimo.numeroParcelas} dias (cobrança diária)</p>
+                  </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Data do Empréstimo</h3>
                     <p className="text-lg font-semibold text-gray-900">{formatDate(emprestimo.dataEmprestimo)}</p>
@@ -302,6 +302,68 @@ export default function DetalhesEmprestimoPage() {
                   <div className="text-center text-sm text-gray-500">
                     {progresso.toFixed(1)}% pago
                   </div>
+                </div>
+              </div>
+
+              {/* Cronograma de Parcelas */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">Cronograma de Parcelas Diárias</h2>
+                
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Dia
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Data
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Valor
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {Array.from({ length: emprestimo.numeroParcelas }, (_, index) => {
+                        const dia = index + 1;
+                        const dataVencimento = new Date(emprestimo.dataEmprestimo);
+                        dataVencimento.setDate(dataVencimento.getDate() + dia);
+                        
+                        const pagamento = emprestimo.pagamentos.find(p => p.numeroParcela === dia);
+                        const status = pagamento ? 'PAGO' : 'PENDENTE';
+                        const isVencido = new Date() > dataVencimento && !pagamento;
+                        
+                        return (
+                          <tr key={dia} className={isVencido ? 'bg-red-50' : ''}>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {dia}º dia
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              {formatDate(dataVencimento.toISOString())}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              {formatCurrency(emprestimo.valorParcela)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                status === 'PAGO' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : isVencido
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {status === 'PAGO' ? 'PAGO' : isVencido ? 'VENCIDO' : 'PENDENTE'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

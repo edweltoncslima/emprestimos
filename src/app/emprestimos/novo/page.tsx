@@ -59,11 +59,11 @@ export default function NovoEmprestimoPage() {
 
   const calcularValorTotal = () => {
     const valor = parseFloat(formData.valor) || 0;
-    const taxaJuros = parseFloat(formData.taxaJuros) || 0;
     const prazoMeses = parseFloat(formData.prazoMeses) || 0;
 
-    if (valor && taxaJuros && prazoMeses) {
-      const valorTotal = valor * Math.pow(1 + taxaJuros / 100, prazoMeses);
+    if (valor && prazoMeses) {
+      // Taxa fixa de 20%
+      const valorTotal = valor * 1.20; // 20% de juros
       const valorParcela = valorTotal / prazoMeses;
       return {
         valorTotal: valorTotal.toFixed(2),
@@ -96,7 +96,7 @@ export default function NovoEmprestimoPage() {
         body: JSON.stringify({
           ...formData,
           valor: parseFloat(formData.valor),
-          taxaJuros: parseFloat(formData.taxaJuros),
+          taxaJuros: 20, // Taxa fixa de 20%
           prazoMeses: parseInt(formData.prazoMeses),
         }),
       });
@@ -213,41 +213,40 @@ export default function NovoEmprestimoPage() {
                 />
               </div>
 
-              {/* Taxa de Juros */}
+              {/* Taxa de Juros (Fixa 20%) */}
               <div>
                 <label htmlFor="taxaJuros" className="block text-sm font-medium text-gray-700 mb-2">
-                  Taxa de Juros Mensal (%) *
+                  Taxa de Juros (Fixa 20%)
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   id="taxaJuros"
                   name="taxaJuros"
-                  value={formData.taxaJuros}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0,00"
+                  value="20"
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-500"
                 />
+                <p className="text-sm text-gray-500 mt-1">Taxa fixa de 20% aplicada automaticamente</p>
               </div>
 
               {/* Prazo */}
               <div>
                 <label htmlFor="prazoMeses" className="block text-sm font-medium text-gray-700 mb-2">
-                  Prazo (meses) *
+                  Prazo (dias) *
                 </label>
-                <input
-                  type="number"
+                <select
                   id="prazoMeses"
                   name="prazoMeses"
                   value={formData.prazoMeses}
                   onChange={handleInputChange}
                   required
-                  min="1"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="12"
-                />
+                >
+                  <option value="">Selecione o prazo</option>
+                  <option value="20">20 dias</option>
+                  <option value="24">24 dias</option>
+                </select>
+                <p className="text-sm text-gray-500 mt-1">Cobrança diária com 20% de juros</p>
               </div>
 
               {/* Data do Empréstimo */}
@@ -282,10 +281,18 @@ export default function NovoEmprestimoPage() {
               </div>
 
               {/* Resumo do Cálculo */}
-              {(formData.valor && formData.taxaJuros && formData.prazoMeses) && (
+              {(formData.valor && formData.prazoMeses) && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="text-sm font-medium text-blue-900 mb-2">Resumo do Cálculo</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-blue-700">Valor Emprestado:</span>
+                      <span className="ml-2 font-medium text-blue-900">{formatCurrency(formData.valor)}</span>
+                    </div>
+                    <div>
+                      <span className="text-blue-700">Juros (20%):</span>
+                      <span className="ml-2 font-medium text-blue-900">{formatCurrency((parseFloat(formData.valor) * 0.20).toString())}</span>
+                    </div>
                     <div>
                       <span className="text-blue-700">Valor Total:</span>
                       <span className="ml-2 font-medium text-blue-900">{formatCurrency(valorTotal)}</span>
@@ -294,6 +301,11 @@ export default function NovoEmprestimoPage() {
                       <span className="text-blue-700">Valor da Parcela:</span>
                       <span className="ml-2 font-medium text-blue-900">{formatCurrency(valorParcela)}</span>
                     </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <p className="text-xs text-blue-700">
+                      <strong>Cobrança:</strong> {formData.prazoMeses} parcelas diárias de {formatCurrency(valorParcela)} cada
+                    </p>
                   </div>
                 </div>
               )}
